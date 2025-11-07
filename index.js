@@ -14,7 +14,7 @@ app.listen(PORT, () => console.log(`Server started on port ${PORT}...`));
 
 // ✅ Connect to MongoDB using environment variable
 mongoose
-    .connect(process.env.MONGO_URI)
+    .connect("mongodb+srv://kabimurugan:kabilan2005@cluster0.gatsi1v.mongodb.net/mail?appName=Cluster0")
     .then(() => console.log("DB Connected"))
     .catch(() => console.log("Failed To DB Connect"));
 
