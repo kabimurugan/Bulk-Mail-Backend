@@ -1,55 +1,71 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+const express = require("express")
+const cors = require("cors")
+const mongoose = require("mongoose")
+const nodemailer = require("nodemailer")
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+const app = express()
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}...`));
+app.use(express.json())
+app.use(cors())
 
-// ✅ Connect to MongoDB using environment variable
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("DB Connected"))
-  .catch(() => console.log("Failed To DB Connect"));
+app.listen(5000, () => console.log("server started..."))
 
-// You can still keep your DB model if needed
-const dbMail = mongoose.model("mails", {}, "mails");
 
-// ✅ Send Mail API
-app.post("/sendmail", async (req, res) => {
-  const { msg, emailLists } = req.body;
 
-  if (!msg || !emailLists || emailLists.length === 0) {
-    return res.status(400).send("Message or email list missing");
-  }
+//Project Start Point
+mongoose.connect("mongodb+srv://kabimurugan:kabilan2005@cluster0.gatsi1v.mongodb.net/mail?appName=Cluster0").then(() => console.log("DB Connected")).catch(() => console.log("Failed To DB Connect"))
 
-  // ✅ Use credentials from environment
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER, // your Gmail from Render env
-      pass: process.env.GMAIL_PASS, // 16-char App Password
-    },
-  });
+const dbMail = mongoose.model("mails", {}, "mails")
 
-  try {
-    for (let i = 0; i < emailLists.length; i++) {
-      await transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: emailLists[i],
-        subject: "Hi, I'm from Bulk-Mail project",
-        text: msg,
-      });
-      console.log("Mail sent to:", emailLists[i]);
-    }
-    res.send(true);
-  } catch (error) {
-    console.error("❌ Failed to send mail:", error);
-    res.send(false);
-  }
-});
+
+//create api for send mail
+
+app.post("/sendmail", (req, res) => {
+
+    var msg = req.body.msg
+    var emailLists = req.body.emailLists
+
+
+    dbMail.find().then((data) => {
+        const transporter = nodemailer.createTransport(
+
+            {
+                service: "gmail",
+                auth: {
+                    user: data[0].toJSON().user,
+                    pass: data[0].toJSON().pass
+                }
+            }
+        )
+        
+        console.log(data[0].toJSON().user)
+        
+        new Promise(async function (resolve, reject) {
+
+            try {
+                for (let i = 0; i < emailLists.length; i++) {
+                    await transporter.sendMail(
+                        {
+                            from: "kabimurugan@gmail.com",
+                            to: emailLists[i],
+                            subject: "Hi, I'm from Bulk-Mail project",
+                            text: msg
+                        }
+                    )
+                    console.log("mail sent to : " + emailLists[i])
+                }
+
+                resolve()
+            }
+            catch (error) {
+                reject()
+            }
+
+        }).then(()=> res.send(true)).catch(()=> res.send(false))
+
+
+    }).catch(() => {
+        console.log("Data not Fetched")
+        res.send(false)  // db la irunthu value varalanahh
+      })
+})
