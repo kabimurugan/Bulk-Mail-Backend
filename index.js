@@ -46,7 +46,7 @@ app.post("/sendmail", (req, res) => {
                 for (let i = 0; i < emailLists.length; i++) {
                     await transporter.sendMail(
                         {
-                            from: "kabimurugan@gmail.com",
+                            from: "kabimurugan8@gmail.com",
                             to: emailLists[i],
                             subject: "Hi, I'm from Bulk-Mail project",
                             text: msg
