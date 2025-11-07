@@ -19,53 +19,49 @@ const dbMail = mongoose.model("mails", {}, "mails")
 
 //create api for send mail
 
-app.post("/sendmail", (req, res) => {
+app.post("/sendmail", async (req, res) => {
+  const msg = req.body.msg;
+  const emailLists = req.body.emailLists;
 
-    var msg = req.body.msg
-    var emailLists = req.body.emailLists
+  console.log("Incoming request:");
+  console.log("Message:", msg);
+  console.log("Email list:", emailLists);
 
+  try {
+    const data = await dbMail.find();
+    if (!data || data.length === 0) {
+      console.log("❌ No credentials found in MongoDB");
+      return res.send(false);
+    }
 
-    dbMail.find().then((data) => {
-        const transporter = nodemailer.createTransport(
+    const user = data[0].user;
+    const pass = data[0].pass;
 
-            {
-                service: "gmail",
-                auth: {
-                    user: data[0].toJSON().user,
-                    pass: data[0].toJSON().pass
-                }
-            }
-        )
+    console.log("✅ Credentials fetched:", user);
 
-        console.log(data[0].toJSON().user)
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass }
+    });
 
-        new Promise(async function (resolve, reject) {
+    for (let i = 0; i < emailLists.length; i++) {
+      try {
+        await transporter.sendMail({
+          from: user,
+          to: emailLists[i],
+          subject: "Hi, I'm from Bulk-Mail project",
+          text: msg
+        });
+        console.log("✅ Mail sent to:", emailLists[i]);
+      } catch (mailError) {
+        console.log("❌ Failed to send to:", emailLists[i], mailError);
+        return res.send(false);
+      }
+    }
 
-            try {
-                for (let i = 0; i < emailLists.length; i++) {
-                    await transporter.sendMail(
-                        {
-                            from: data[0].toJSON().user,
-                            to: emailLists[i],
-                            subject: "Hi, I'm from Bulk-Mail project",
-                            text: msg
-                        }
-                    )
-                    console.log("mail sent to : " + emailLists[i])
-                }
-
-                resolve()
-            }
-            catch (error) {
-                console.log("SendMail error:", error)
-                reject()
-            }
-
-        }).then(() => res.send(true)).catch(() => res.send(false))
-
-
-    }).catch((error) => {
-        console.log("Mail sending error:", error)
-        res.send(false)
-    })
-})
+    res.send(true);
+  } catch (error) {
+    console.log("❌ General error:", error);
+    res.send(false);
+  }
+});
