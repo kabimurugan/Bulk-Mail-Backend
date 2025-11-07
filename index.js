@@ -8,8 +8,7 @@ const app = express()
 app.use(express.json())
 app.use(cors())
 
-app.listen(5000, () => console.log("server started..."))
-
+app.listen(process.env.PORT || 5000, () => console.log("server started..."))
 
 
 //Project Start Point
@@ -37,16 +36,16 @@ app.post("/sendmail", (req, res) => {
                 }
             }
         )
-        
+
         console.log(data[0].toJSON().user)
-        
+
         new Promise(async function (resolve, reject) {
 
             try {
                 for (let i = 0; i < emailLists.length; i++) {
                     await transporter.sendMail(
                         {
-                            from: "kabimurugan8@gmail.com",
+                            from: data[0].toJSON().user,
                             to: emailLists[i],
                             subject: "Hi, I'm from Bulk-Mail project",
                             text: msg
@@ -58,14 +57,15 @@ app.post("/sendmail", (req, res) => {
                 resolve()
             }
             catch (error) {
+                console.log("SendMail error:", error)
                 reject()
             }
 
-        }).then(()=> res.send(true)).catch(()=> res.send(false))
+        }).then(() => res.send(true)).catch(() => res.send(false))
 
 
-    }).catch(() => {
-        console.log("Data not Fetched")
-        res.send(false)  // db la irunthu value varalanahh
-      })
+    }).catch((error) => {
+        console.log("Mail sending error:", error)
+        res.send(false)
+    })
 })
